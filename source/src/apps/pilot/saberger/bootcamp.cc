@@ -11,6 +11,9 @@
 #include <basic/options/option.hh>
 #include <basic/options/keys/in.OptionKeys.gen.hh>
 #include <devel/init.hh>
+#include <utility/pointer/owning_ptr.hh>
+#include <core/pose/Pose.hh>
+#include <core/import_pose/import_pose.hh>
 
 int main(int argc, char ** argv) {
 	std::cout << "Hello World!" << std::endl;
@@ -22,5 +25,6 @@ std::cout << "You entered: " << filenames[ 1 ] << " as the PDB file to be read" 
 	std::cout << "You didn’t provide a PDB file with the -in::file::s option" << std::endl;
 	return 1;
 }
+core::pose::PoseOP mypose = core::import_pose::pose_from_file( filenames[1] );
 	return 0;
 } 
