@@ -912,6 +912,10 @@ sources = {
 	],
 
 	# S ######################################################################
+	"pilot/saberger" : [
+		"bootcamp_jd2", # /* Sarah Berger Rosetta bootcamp */
+		"bootcamp", # /* Sarah Berger Rosetta bootcamp */
+	],
 	"pilot/sarel" : [
 		"hotspot_stub_constraint_test", # /* Sarel Fleishman,Documentation Location,Demo Location */
 		#"test_revert", # /* Sarel Fleishman,Documentation Location,Demo Location */
