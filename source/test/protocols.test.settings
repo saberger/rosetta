@@ -82,7 +82,9 @@ sources = {
 	"branch_angle" : [
 		"BranchAngleOptimizer",
 	],
-
+  "bootcamp": [
+		"QueueTests",
+	],
 	"calc_taskop_movers" : [
 		"ForceDisulfidesMover",
 	],
