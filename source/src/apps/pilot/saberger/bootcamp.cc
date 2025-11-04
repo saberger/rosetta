@@ -24,6 +24,12 @@
 #include <protocols/moves/MonteCarlo.hh>
 #include <iostream>
 #include <protocols/moves/PyMOLMover.hh>
+#include <core/pack/task/PackerTask.hh>
+#include <core/pack/task/TaskFactory.hh>
+#include <core/pack/pack_rotamers.hh>
+#include <core/kinematics/MoveMap.hh>
+#include <core/optimization/MinimizerOptions.hh>
+#include <core/optimization/AtomTreeMinimizer.hh>
 
 
 int main(int argc, char ** argv) {
@@ -48,6 +54,7 @@ int main(int argc, char ** argv) {
     protocols::moves::PyMOLObserverOP the_observer = protocols::moves::AddPyMOLObserver( *mypose, true, 0 );
 
     // Monte Carlo loop
+    core::pose::Pose copy_pose;
     for (int i = 0; i < 1000; ++i) { // Perform 1000 iterations
         core::Size total_residues = mypose->total_residue();
         core::Size randres = static_cast<core::Size>(numeric::random::uniform() * total_residues + 1);
@@ -61,7 +68,21 @@ int main(int argc, char ** argv) {
         mypose->set_phi(randres, orig_phi + pert1);
         mypose->set_psi(randres, orig_psi + pert2);
 
-        mc.boltzmann(*mypose);
+        // Packing
+        core::pack::task::PackerTaskOP repack_task =
+        core::pack::task::TaskFactory::create_packer_task( *mypose );
+        repack_task->restrict_to_repacking();
+        core::pack::pack_rotamers( *mypose, *sfxn, repack_task );
+
+        // Minimization
+        core::kinematics::MoveMap mm;
+        mm.set_bb( true );
+        mm.set_chi( true );
+        core::optimization::MinimizerOptions min_opts( "lbfgs_armijo_atol", 0.01, true );
+        core::optimization::AtomTreeMinimizer atm;
+        copy_pose = *mypose;
+        atm.run(copy_pose, mm, *sfxn, min_opts); // Pass copy_pose directly
+        *mypose = copy_pose;
     }
 
     std::cout << "Final Score: " << sfxn->score(*mypose) << std::endl;
