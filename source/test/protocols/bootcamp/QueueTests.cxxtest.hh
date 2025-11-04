@@ -35,13 +35,27 @@ static basic::Tracer TR("QueueTests");
 
 class QueueTests : public CxxTest::TestSuite {
 private:
-    protocols::bootcamp::Queue queue; // no <int>
+    protocols::bootcamp::Queue queue;
 
 public:
     void test_enqueue() {
         TS_TRACE("Testing enqueue method");
         queue.enqueue("A");
-        TS_ASSERT_EQUALS(queue.size(), 1);
+        queue.enqueue("B");
+        TS_ASSERT_EQUALS(queue.size(), 2);
         TS_ASSERT(!queue.is_empty());
     }
+
+    void test_dequeue() {
+        TS_TRACE("Testing dequeue method");
+        queue.enqueue("A");
+        queue.enqueue("B");
+        std::string first = queue.dequeue();
+        TS_ASSERT_EQUALS(first, "A");
+        TS_ASSERT_EQUALS(queue.size(), 1);
+        std::string second = queue.dequeue();
+        TS_ASSERT_EQUALS(second, "B");
+        TS_ASSERT(queue.is_empty());
+    }
+
 };
