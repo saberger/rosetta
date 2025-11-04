@@ -55,7 +55,7 @@ int main(int argc, char ** argv) {
 
     // Monte Carlo loop
     core::pose::Pose copy_pose;
-    for (int i = 0; i < 1000; ++i) { // Perform 1000 iterations
+    for (int i = 0; i < 10; ++i) { // Perform 10 iterations
         core::Size total_residues = mypose->total_residue();
         core::Size randres = static_cast<core::Size>(numeric::random::uniform() * total_residues + 1);
 
@@ -83,6 +83,8 @@ int main(int argc, char ** argv) {
         copy_pose = *mypose;
         atm.run(copy_pose, mm, *sfxn, min_opts); // Pass copy_pose directly
         *mypose = copy_pose;
+
+        mc.boltzmann(*mypose);
     }
 
     std::cout << "Final Score: " << sfxn->score(*mypose) << std::endl;
