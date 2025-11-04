@@ -7,8 +7,8 @@
 // (c) For more information, see http://www.rosettacommons.org. Questions about this can be
 // (c) addressed to University of Washington CoMotion, email: license@uw.edu.
 
-/// @file  p/r/o/t/o/c/o/l/s///b/o/o/t/c/a/m/p/QueueTests.cxxtest.hh
-/// @brief  My first test
+/// @file  protocols/bootcamp/QueueTests.cxxtest.hh
+/// @brief  Tests for the Queue class
 /// @author saberger (sarah.berger01@gmx.at)
 
 
@@ -19,8 +19,9 @@
 #include <test/util/pose_funcs.hh>
 #include <test/core/init_util.hh>
 
-// Project Headers
 
+// Project Headers
+#include <protocols/bootcamp/Queue.hh>
 
 // Core Headers
 #include <core/pose/Pose.hh>
@@ -33,25 +34,14 @@ static basic::Tracer TR("QueueTests");
 
 
 class QueueTests : public CxxTest::TestSuite {
-	//Define Variables
+private:
+    protocols::bootcamp::Queue queue; // no <int>
 
 public:
-
-	void setUp() {
-		core_init();
-
-	}
-
-	void tearDown() {
-
-	}
-
-
-
-	void test_first() {
-		   TS_TRACE( "Running my first unit test!" );
-       TS_ASSERT( true );
-	}
-
-
+    void test_enqueue() {
+        TS_TRACE("Testing enqueue method");
+        queue.enqueue("A");
+        TS_ASSERT_EQUALS(queue.size(), 1);
+        TS_ASSERT(!queue.is_empty());
+    }
 };
