@@ -20,6 +20,9 @@ sources = {
     "protocols/bootcamp": [
         "Queue",
     ],
+    "bootcamp": [
+		"QueueTests",
+	],
 }
 include_path = [
 ]
