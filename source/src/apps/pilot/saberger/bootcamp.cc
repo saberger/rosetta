@@ -14,6 +14,8 @@
 #include <utility/pointer/owning_ptr.hh>
 #include <core/pose/Pose.hh>
 #include <core/import_pose/import_pose.hh>
+#include <core/scoring/ScoreFunctionFactory.hh>
+#include <core/scoring/ScoreFunction.hh>
 
 int main(int argc, char ** argv) {
 	std::cout << "Hello World!" << std::endl;
@@ -26,5 +28,11 @@ std::cout << "You entered: " << filenames[ 1 ] << " as the PDB file to be read" 
 	return 1;
 }
 core::pose::PoseOP mypose = core::import_pose::pose_from_file( filenames[1] );
+
+core::scoring::ScoreFunctionOP sfxn = core::scoring::get_score_function();
+
+core::Real score = sfxn->score( *mypose );
+
+std::cout << score;
 	return 0;
 } 
