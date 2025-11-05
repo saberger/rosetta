@@ -18,6 +18,9 @@
 #include <test/core/init_util.hh>
 #include <utility> // for std::pair
 #include <vector>  // for std::vector
+#include <iostream>
+#include <string>
+#include <cassert>
 
 // Utility headers
 
@@ -73,4 +76,81 @@ public:
         ranges.emplace_back(start, bitstring.size());
     }
 }
+utility::vector1< std::pair< core::Size, core::Size > >
+identify_secondary_structure_spans( std::string const & ss_string )
+{
+  utility::vector1< std::pair< core::Size, core::Size > > ss_boundaries;
+  core::Size strand_start = -1;
+  for ( core::Size ii = 0; ii < ss_string.size(); ++ii ) {
+    if ( ss_string[ ii ] == 'E' || ss_string[ ii ] == 'H'  ) {
+      if ( int( strand_start ) == -1 ) {
+        strand_start = ii;
+      } else if ( ss_string[ii] != ss_string[strand_start] ) {
+        ss_boundaries.push_back( std::make_pair( strand_start+1, ii ) );
+        strand_start = ii;
+      }
+    } else {
+      if ( int( strand_start ) != -1 ) {
+        ss_boundaries.push_back( std::make_pair( strand_start+1, ii ) );
+        strand_start = -1;
+      }
+    }
+  }
+  if ( int( strand_start ) != -1 ) {
+    // last residue was part of a ss-eleemnt                                                                                                                                
+    ss_boundaries.push_back( std::make_pair( strand_start+1, ss_string.size() ));
+  }
+  for ( core::Size ii = 1; ii <= ss_boundaries.size(); ++ii ) {
+    std::cout << "SS Element " << ii << " from residue "
+      << ss_boundaries[ ii ].first << " to "
+      << ss_boundaries[ ii ].second << std::endl;
+  }
+  return ss_boundaries;
+}
+// Assuming the function signature is something like this:
+std::vector<std::pair<int, int>> parse_secondary_structure(const std::string& ss_string);
+
+void test_parse_secondary_structure() {
+    // Test case 1
+    std::string ss_string1 = "   EEEEE   HHHHHHHH  EEEEE   IGNOR EEEEEE   HHHHHHHHHHH  EEEEE  HHHH   ";
+    std::vector<std::pair<int, int>> expected1 = {
+        {4, 8}, {12, 19}, {22, 26}, {36, 41}, {45, 55}, {58, 62}, {65, 68}
+    };
+    std::vector<std::pair<int, int>> result1 = parse_secondary_structure(ss_string1);
+    assert(result1.size() == expected1.size() && "Mismatch in number of secondary structure elements (Test 1)");
+    for (size_t i = 0; i < expected1.size(); ++i) {
+        assert(result1[i] == expected1[i] && "Mismatch in secondary structure boundaries (Test 1)");
+    }
+
+    // Test case 2
+    std::string ss_string2 = "HHHHHHH   HHHHHHHHHHHH      HHHHHHHHHHHHEEEEEEEEEEHHHHHHH EEEEHHH ";
+    std::vector<std::pair<int, int>> expected2 = {
+        {1, 7}, {11, 22}, {29, 40}, {41, 50}, {51, 57}, {59, 62}, {63, 65}
+    };
+    std::vector<std::pair<int, int>> result2 = parse_secondary_structure(ss_string2);
+    assert(result2.size() == expected2.size() && "Mismatch in number of secondary structure elements (Test 2)");
+    for (size_t i = 0; i < expected2.size(); ++i) {
+        assert(result2[i] == expected2[i] && "Mismatch in secondary structure boundaries (Test 2)");
+    }
+
+    // Test case 3
+    std::string ss_string3 = "EEEEEEEEE EEEEEEEE EEEEEEEEE H EEEEE H H H EEEEEEEE";
+    std::vector<std::pair<int, int>> expected3 = {
+        {1, 9}, {11, 18}, {20, 28}, {30, 30}, {32, 36}, {38, 38}, {40, 40}, {42, 42}, {44, 51}
+    };
+    std::vector<std::pair<int, int>> result3 = parse_secondary_structure(ss_string3);
+    assert(result3.size() == expected3.size() && "Mismatch in number of secondary structure elements (Test 3)");
+    for (size_t i = 0; i < expected3.size(); ++i) {
+        assert(result3[i] == expected3[i] && "Mismatch in secondary structure boundaries (Test 3)");
+    }
+
+    std::cout << "All tests passed!" << std::endl;
+}
+
+int main() {
+    test_parse_secondary_structure();
+    return 0;
+}
+
+
 };
