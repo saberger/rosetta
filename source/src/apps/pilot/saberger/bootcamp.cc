@@ -16,13 +16,8 @@
 #include <core/import_pose/import_pose.hh>
 #include <core/scoring/ScoreFunctionFactory.hh>
 #include <core/scoring/ScoreFunction.hh>
-#include <core/pose/Pose.hh>
-#include <core/import_pose/import_pose.hh>
-#include <core/scoring/ScoreFunction.hh>
-#include <core/scoring/ScoreFunctionFactory.hh>
 #include <numeric/random/random.hh>
 #include <protocols/moves/MonteCarlo.hh>
-#include <iostream>
 #include <protocols/moves/PyMOLMover.hh>
 #include <core/pack/task/PackerTask.hh>
 #include <core/pack/task/TaskFactory.hh>
@@ -30,64 +25,93 @@
 #include <core/kinematics/MoveMap.hh>
 #include <core/optimization/MinimizerOptions.hh>
 #include <core/optimization/AtomTreeMinimizer.hh>
+#include <core/scoring/Energies.hh> // Add this include for the full definition of Energies
 
+
+// Rest of the code...
 
 int main(int argc, char ** argv) {
-    std::cout << "Hello World!" << std::endl;
-    devel::init( argc, argv );
-    utility::vector1< std::string > filenames = basic::options::option[ basic::options::OptionKeys::in::file::s ].value();
-    if ( filenames.size() > 0 ) {
-    std::cout << "You entered: " << filenames[ 1 ] << " as the PDB file to be read" << std::endl;
-    } else {
-        std::cout << "You didn’t provide a PDB file with the -in::file::s option" << std::endl;
-        return 1;
-    }
-    core::pose::PoseOP mypose = core::import_pose::pose_from_file( filenames[1] );
+	std::cout << "Hello World!" << std::endl;
+	devel::init(argc, argv);
 
-    core::scoring::ScoreFunctionOP sfxn = core::scoring::get_score_function();
+	utility::vector1< std::string > filenames = basic::options::option[ basic::options::OptionKeys::in::file::s ].value();
+	if ( filenames.size() > 0 ) {
+		std::cout << "You entered: " << filenames[1] << " as the PDB file to be read" << std::endl;
+	} else {
+		std::cout << "You didn’t provide a PDB file with the -in::file::s option" << std::endl;
+		return 1;
+	}
 
-    //core::Real score = sfxn->score( *mypose );
+	core::pose::PoseOP mypose = core::import_pose::pose_from_file( filenames[1] );
+	core::scoring::ScoreFunctionOP sfxn = core::scoring::get_score_function();
 
-    // Initialize MonteCarlo object
-    protocols::moves::MonteCarlo mc(*mypose, *sfxn, 1.0); // Temperature = 1.0
-    
-    protocols::moves::PyMOLObserverOP the_observer = protocols::moves::AddPyMOLObserver( *mypose, true, 0 );
+	// Initialize MonteCarlo object
+	protocols::moves::MonteCarlo mc(*mypose, *sfxn, 1.0); // Temperature = 1.0
+	protocols::moves::PyMOLObserverOP the_observer = protocols::moves::AddPyMOLObserver(*mypose, true, 0);
 
-    // Monte Carlo loop
-    core::pose::Pose copy_pose;
-    for (int i = 0; i < 10; ++i) { // Perform 10 iterations
-        core::Size total_residues = mypose->total_residue();
-        core::Size randres = static_cast<core::Size>(numeric::random::uniform() * total_residues + 1);
+	//--------------------------------------------------------------------
+	// NEW: Variables for acceptance and score tracking
+	core::Size accepted_moves = 0;
+	core::Size total_moves = 0;
+	core::Real cumulative_score = 0.0;
+	const core::Size report_interval = 10; // print every 100 iterations
+	const core::Size n_iterations = 10;   // change as needed
+	//--------------------------------------------------------------------
 
-        core::Real pert1 = numeric::random::gaussian();
-        core::Real pert2 = numeric::random::gaussian();
+	core::pose::Pose copy_pose;
 
-        core::Real orig_phi = mypose->phi(randres);
-        core::Real orig_psi = mypose->psi(randres);
+	for (core::Size i = 1; i <= n_iterations; ++i) {
+		core::Size total_residues = mypose->total_residue();
+		core::Size randres = static_cast<core::Size>(numeric::random::uniform() * total_residues + 1);
 
-        mypose->set_phi(randres, orig_phi + pert1);
-        mypose->set_psi(randres, orig_psi + pert2);
+		core::Real pert1 = numeric::random::gaussian();
+		core::Real pert2 = numeric::random::gaussian();
 
-        // Packing
-        core::pack::task::PackerTaskOP repack_task =
-        core::pack::task::TaskFactory::create_packer_task( *mypose );
-        repack_task->restrict_to_repacking();
-        core::pack::pack_rotamers( *mypose, *sfxn, repack_task );
+		core::Real orig_phi = mypose->phi(randres);
+		core::Real orig_psi = mypose->psi(randres);
 
-        // Minimization
-        core::kinematics::MoveMap mm;
-        mm.set_bb( true );
-        mm.set_chi( true );
-        core::optimization::MinimizerOptions min_opts( "lbfgs_armijo_atol", 0.01, true );
-        core::optimization::AtomTreeMinimizer atm;
-        copy_pose = *mypose;
-        atm.run(copy_pose, mm, *sfxn, min_opts); // Pass copy_pose directly
-        *mypose = copy_pose;
+		mypose->set_phi(randres, orig_phi + pert1);
+		mypose->set_psi(randres, orig_psi + pert2);
 
-        mc.boltzmann(*mypose);
-    }
+		// Packing
+		core::pack::task::PackerTaskOP repack_task =
+			core::pack::task::TaskFactory::create_packer_task(*mypose);
+		repack_task->restrict_to_repacking();
+		core::pack::pack_rotamers(*mypose, *sfxn, repack_task);
 
-    std::cout << "Final Score: " << sfxn->score(*mypose) << std::endl;
+		// Minimization
+		core::kinematics::MoveMap mm;
+		mm.set_bb(true);
+		mm.set_chi(true);
+		core::optimization::MinimizerOptions min_opts("lbfgs_armijo_atol", 0.01, true);
+		core::optimization::AtomTreeMinimizer atm;
+		copy_pose = *mypose;
+		atm.run(copy_pose, mm, *sfxn, min_opts);
+		*mypose = copy_pose;
 
-    return 0;
+		// Monte Carlo acceptance
+		mc.boltzmann(*mypose);
+
+		//----------------------------------------------------------------
+		// NEW: Update and report statistics
+		total_moves++;
+		if (mc.mc_accepted()) accepted_moves++;
+
+		// The Pose’s Energies object stores the last computed score
+		core::Real score = mypose->energies().total_energy();
+		cumulative_score += score;
+
+		if (i % report_interval == 0) {
+			core::Real acceptance_rate = static_cast<core::Real>(accepted_moves) / total_moves;
+			core::Real avg_score = cumulative_score / total_moves;
+
+			std::cout << "Iteration " << i
+			          << " | Acceptance rate: " << acceptance_rate
+			          << " | Avg. score: " << avg_score << std::endl;
+		}
+		//----------------------------------------------------------------
+	}
+
+	std::cout << "Final Score: " << sfxn->score(*mypose) << std::endl;
+	return 0;
 }
