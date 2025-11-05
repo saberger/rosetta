@@ -54,8 +54,8 @@ int main(int argc, char ** argv) {
 	core::Size accepted_moves = 0;
 	core::Size total_moves = 0;
 	core::Real cumulative_score = 0.0;
-	const core::Size report_interval = 10; // print every 100 iterations
-	const core::Size n_iterations = 10;   // change as needed
+	const core::Size report_interval = 100; // print every 100 iterations
+	const core::Size n_iterations = 1000;   // change as needed
 	//--------------------------------------------------------------------
 
 	core::pose::Pose copy_pose;
