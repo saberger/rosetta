@@ -16,6 +16,8 @@
 #include <cxxtest/TestSuite.h>
 #include <test/util/pose_funcs.hh>
 #include <test/core/init_util.hh>
+#include <utility> // for std::pair
+#include <vector>  // for std::vector
 
 // Utility headers
 
@@ -52,4 +54,23 @@ public:
 	void test_hello_world() {
 	TS_ASSERT( true );
 	}
+	void find_ones_block( utility::vector1< int > const & bitstring, std::vector< std::pair<int, int> > & ranges ) {
+    int start = 0;
+    for ( uint ii = 1; ii <= bitstring.size(); ++ii ) {
+        if ( start != 0 ) {
+            if ( bitstring[ ii ] != 1 ) {
+                ranges.emplace_back(start, ii - 1); // Add the range to the list
+                start = 0;
+            }
+        } else {
+            if ( bitstring[ ii ] == 1 ) {
+                start = ii;
+            }
+        }
+    }
+    // If the last block ends at the end of the vector
+    if ( start != 0 ) {
+        ranges.emplace_back(start, bitstring.size());
+    }
+}
 };
